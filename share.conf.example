@@ -1,0 +1,15 @@
+# What the non-default profiles share with the base profile at ~/.codex.
+# Copy to share.conf (gitignored) — or let the "setup" skill write it for you.
+#
+# Anything not listed here is ALWAYS per-profile and never shared:
+# auth.json, logs_*.sqlite, memories_*.sqlite, caches.
+SHARE_AGENTS_MD=true
+SHARE_SKILLS=true
+
+# config.toml — MCP servers, hooks, model, the status line.
+SHARE_CONFIG_TOML=true
+
+# history.jsonl (the composer's up-arrow) and state_*.sqlite (the thread store
+# behind `codex resume`). Safe with several profiles running at once, but it
+# does mean every account sees every conversation.
+SHARE_HISTORY=true

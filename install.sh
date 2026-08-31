@@ -53,9 +53,24 @@ link_shared_item() {
 	log "  linked $target_path -> $source_path"
 }
 
+# shared/AGENTS.md is machine-local (gitignored) exactly like profiles.d/*.conf:
+# the repo ships only the .example, so a clone carries nobody's personal
+# instructions. An AGENTS.md the user already had is left strictly alone — this
+# repo adopts a file, it never overwrites one.
 link_shared_files() {
 	log "Linking shared config into $BASE_DIR..."
-	link_shared_item "$REPO_DIR/shared/AGENTS.md" "$BASE_DIR/AGENTS.md"
+
+	if [ ! -f "$REPO_DIR/shared/AGENTS.md" ]; then
+		cp "$REPO_DIR/shared/AGENTS.md.example" "$REPO_DIR/shared/AGENTS.md"
+		log "  created shared/AGENTS.md from the template"
+	fi
+
+	if [ -e "$BASE_DIR/AGENTS.md" ] && [ ! -L "$BASE_DIR/AGENTS.md" ]; then
+		log "  keeping your existing $BASE_DIR/AGENTS.md untouched"
+		log "    to let this repo manage it: move it to $REPO_DIR/shared/AGENTS.md and re-run"
+	else
+		link_shared_item "$REPO_DIR/shared/AGENTS.md" "$BASE_DIR/AGENTS.md"
+	fi
 
 	local skill_dir
 	for skill_dir in "$REPO_DIR"/shared/skills/*/; do
@@ -112,7 +127,21 @@ apply_status_line_config() {
 	log "  rewrote [tui] status_line / terminal_title (other keys preserved)"
 }
 
-# Profiles other than the base one (e.g. ~/.codex-betha) don't hold their own
+# What gets shared is machine-local (share.conf, gitignored). A clone with no
+# share.conf shares everything — the defaults below — and the "setup" skill
+# writes the file when someone wants less than that.
+load_share_settings() {
+	SHARE_AGENTS_MD=true
+	SHARE_SKILLS=true
+	SHARE_CONFIG_TOML=true
+	SHARE_HISTORY=true
+	if [ -f "$REPO_DIR/share.conf" ]; then
+		# shellcheck source=/dev/null
+		source "$REPO_DIR/share.conf"
+	fi
+}
+
+# Profiles other than the base one (e.g. ~/.codex-work) don't hold their own
 # copy of the shared files — they mirror BASE_DIR, one hop away. config.toml is
 # mirrored too, which is what makes MCP servers and the status line identical
 # across accounts while auth.json, history and sessions stay per-profile.
@@ -129,20 +158,27 @@ mirror_shared_files_into_other_profiles() {
 
 		log "Mirroring shared config into $PROFILE_CODEX_HOME..."
 		mkdir -p "$PROFILE_CODEX_HOME"
-		link_shared_item "$BASE_DIR/AGENTS.md" "$PROFILE_CODEX_HOME/AGENTS.md"
-		link_shared_item "$BASE_DIR/skills" "$PROFILE_CODEX_HOME/skills"
-		link_shared_item "$BASE_DIR/config.toml" "$PROFILE_CODEX_HOME/config.toml"
+		if [ "$SHARE_AGENTS_MD" = true ] && [ -e "$BASE_DIR/AGENTS.md" ]; then
+			link_shared_item "$BASE_DIR/AGENTS.md" "$PROFILE_CODEX_HOME/AGENTS.md"
+		fi
+		if [ "$SHARE_SKILLS" = true ]; then
+			link_shared_item "$BASE_DIR/skills" "$PROFILE_CODEX_HOME/skills"
+		fi
+		if [ "$SHARE_CONFIG_TOML" = true ]; then
+			link_shared_item "$BASE_DIR/config.toml" "$PROFILE_CODEX_HOME/config.toml"
+		fi
 
 		# Conversation history. SQLite resolves symlinks to the real path before
 		# naming its -wal/-shm companions, so both profiles land on one WAL and
 		# its normal multi-process locking applies — verified safe with the two
 		# profiles writing concurrently. Only the .sqlite is linked; the -wal and
 		# -shm files belong next to the real database, never here.
-		if [ -f "$BASE_DIR/history.jsonl" ]; then
+		if [ "$SHARE_HISTORY" = true ] && [ -f "$BASE_DIR/history.jsonl" ]; then
 			link_shared_item "$BASE_DIR/history.jsonl" "$PROFILE_CODEX_HOME/history.jsonl"
 		fi
 		local state_db
 		for state_db in "$BASE_DIR"/state_*.sqlite; do
+			[ "$SHARE_HISTORY" = true ] || continue
 			[ -f "$state_db" ] || continue
 			link_shared_item "$state_db" "$PROFILE_CODEX_HOME/$(basename "$state_db")"
 		done
@@ -266,6 +302,7 @@ main() {
 	require_dependency awk
 
 	bootstrap_default_profile
+	load_share_settings
 	link_shared_files
 	apply_status_line_config
 	mirror_shared_files_into_other_profiles

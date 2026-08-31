@@ -12,27 +12,34 @@ cd ~/workspace/codex-profile
 exec $SHELL
 ```
 
-`profiles.d/` is gitignored, so a fresh clone has no profiles. `install.sh`
-seeds a single `personal.conf` pointing at `~/.codex` — the account you already
-use — so nothing changes about how you work until you add a second one.
+The repo ships no personal configuration, so `install.sh` seeds the minimum
+that makes `codex` work: one profile pointing at `~/.codex` — the account you
+already use — and `shared/AGENTS.md` from its template. If you already had an
+`~/.codex/AGENTS.md`, it is left untouched and the repo simply doesn't manage
+it.
 
-At this point `codex` still opens the same account it always did, now with the
-shared status line applied and a banner on top.
+At this point `codex` opens the same account it always did, now with the
+shared status line and a banner on top. This step also links `shared/skills/`
+into `~/.codex/skills`, which is what makes the next step possible.
 
-## 2. Add a second account
+## 2. Let the interview configure it
 
-Ask the `new-profile` skill inside Codex:
+Open Codex and run:
 
-> create a new Codex profile for work
+```
+/setup
+```
 
-It interviews you (name, command letter, emoji, color, theme), writes
-`profiles.d/work.conf` and re-runs `install.sh`.
+It asks how many accounts you want, what each is named, which one plain
+`codex` should open, and what the accounts should share — then writes
+`profiles.d/*.conf` and `share.conf` and re-runs `install.sh` for you.
 
-By hand instead:
+Prefer to do it by hand:
 
 ```bash
 cp profiles.d/personal.conf.example profiles.d/work.conf
 $EDITOR profiles.d/work.conf     # set NAME, COMMAND, CODEX_HOME, LABEL, COLOR
+cp share.conf.example share.conf # optional: opt out of sharing something
 ./install.sh
 exec $SHELL
 ```

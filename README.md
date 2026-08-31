@@ -105,22 +105,60 @@ live in the status line. Two stand-ins:
 - a per-profile **syntax theme** via `PROFILE_THEME`, which is the cue you
   actually notice while working.
 
+## Nothing personal ships in this repo
+
+A clone carries no profiles, no `AGENTS.md` and no sharing choices — only
+templates. Machine-local files are gitignored and generated on your machine:
+
+| in the repo | on your machine |
+|---|---|
+| `profiles.d/personal.conf.example` | `profiles.d/*.conf` |
+| `shared/AGENTS.md.example` | `shared/AGENTS.md` |
+| `share.conf.example` | `share.conf` |
+
+`install.sh` seeds each one from its template only when it is missing, and an
+`~/.codex/AGENTS.md` you already had is left strictly alone — this repo adopts
+a file, it never overwrites one.
+
+`share.conf` decides what the profiles share; a clone with no `share.conf`
+shares everything.
+
+```bash
+SHARE_AGENTS_MD=true
+SHARE_SKILLS=true
+SHARE_CONFIG_TOML=true   # MCP servers, hooks, model, status line
+SHARE_HISTORY=true       # history.jsonl + state_*.sqlite (codex resume)
+```
+
 ## Install
 
 ```bash
 git clone https://github.com/arturoburigo/codex-profile.git
 cd codex-profile
-./install.sh
+./install.sh     # working single-profile default, and installs the skills
 exec $SHELL
 ```
 
-Requires `awk` (and `git` for the clone above). See [ONBOARDING.md](ONBOARDING.md) for adding a
-second account.
+Then let the interview write the real configuration — open Codex and run:
 
-## Adding a profile
+```
+/setup
+```
 
-Ask the bundled `new-profile` skill ("create a new Codex profile") and it runs
-the interview for you, or write `profiles.d/<name>.conf` by hand from
+It asks how many accounts you want, what each is called, and what they should
+share, then writes `profiles.d/*.conf` plus `share.conf` and re-runs
+`install.sh`. Running `install.sh` first is what makes `/setup` visible to
+Codex in the first place, since that is the step that links `shared/skills/`
+into `~/.codex/skills`.
+
+Requires `awk` (and `git` for the clone above). See
+[ONBOARDING.md](ONBOARDING.md) for the walkthrough.
+
+## Adding a profile later
+
+`/setup` configures everything from scratch. To add one more account to a
+working setup, use the `new-profile` skill ("create a new Codex profile"), or
+write `profiles.d/<name>.conf` by hand from
 [`profiles.d/personal.conf.example`](profiles.d/personal.conf.example) and
 re-run `./install.sh`.
 

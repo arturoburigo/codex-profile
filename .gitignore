@@ -7,3 +7,6 @@ profiles.d/*.conf
 
 # OS cruft
 .DS_Store
+
+shared/AGENTS.md
+share.conf
