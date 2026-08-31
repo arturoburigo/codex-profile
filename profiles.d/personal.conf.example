@@ -1,0 +1,15 @@
+# Copy this file, rename it (e.g. work.conf), and edit the values below —
+# or just ask the "new-profile" skill to do it for you interactively.
+PROFILE_NAME="personal"
+PROFILE_COMMAND="p"
+PROFILE_CODEX_HOME="$HOME/.codex"
+PROFILE_LABEL="👤 Personal"
+PROFILE_COLOR="FF8700"
+PROFILE_IS_DEFAULT=true
+# Codex syntax theme for this profile. Because config.toml is shared across
+# profiles, this is the per-profile visual cue — it is applied as a `-c`
+# override at launch instead of being written to the shared file.
+PROFILE_THEME=""
+# Extra flags appended to every `codex` invocation for this profile, e.g.
+# "--dangerously-bypass-approvals-and-sandbox". Leave empty for the default.
+PROFILE_EXTRA_CODEX_FLAGS=""

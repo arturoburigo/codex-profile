@@ -1,0 +1,24 @@
+# Managed by install.sh — the [tui] keys below are rewritten in place inside
+# $CODEX_HOME/config.toml on every run. Everything else in that file (the
+# [projects] trust levels Codex writes itself, [mcp_servers], model choice)
+# is left untouched.
+#
+# Codex renders its status line from a FIXED catalog of built-in items — there
+# is no free-text or shell-command item, so a segment has to exist in the
+# catalog to appear here. See README.md for the full catalog and for how each
+# item maps back to a segment of the Claude Code statusline.
+status_line = [
+  "project-name",
+  "git-branch",
+  "branch-changes",
+  "pull-request-number",
+  "model-with-reasoning",
+  "fast-mode",
+  "context-remaining",
+  "five-hour-limit",
+  "weekly-limit",
+  "used-tokens",
+  "permissions",
+]
+status_line_use_colors = true
+terminal_title = ["activity", "project-name", "thread-title"]
