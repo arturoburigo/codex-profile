@@ -28,13 +28,26 @@ function in `~/.zshrc` and `~/.bashrc` that dispatches on the first argument.
 
 | | |
 |---|---|
-| **Per-profile** | `auth.json`, `history.jsonl`, `sessions/`, `logs_*.sqlite`, caches — isolated by `CODEX_HOME` |
-| **Shared** | `config.toml` (MCP servers, hooks, model), `AGENTS.md`, `skills/` — symlinked from the base profile |
+| **Per-profile** | `auth.json`, `logs_*.sqlite`, `memories_*.sqlite`, `sessions/`, caches — isolated by `CODEX_HOME` |
+| **Shared** | `config.toml` (MCP servers, hooks, model), `AGENTS.md`, `skills/`, `history.jsonl`, `state_*.sqlite` — symlinked from the base profile |
 | **Per-profile override** | the syntax theme, applied as `-c tui.theme=…` at launch |
 
 Sharing `config.toml` is what keeps MCP servers and skills identical across
 accounts. It is symlinked rather than copied, which works because Codex writes
 *through* the symlink instead of replacing it — verified with `codex mcp add`.
+
+`history.jsonl` (the composer's `↑` recall) and `state_*.sqlite` (the thread
+store behind `codex resume`) are shared the same way, so conversation history
+is common to every profile. That is safe with two profiles running at once:
+SQLite resolves the symlink to the real path before naming its `-wal`/`-shm`
+companions, so both processes land on one WAL, and Codex sets `PRAGMA
+busy_timeout` — 300 concurrent writes through both paths finished with
+`integrity_check` clean. `sessions/` stays per-profile: it holds legacy
+rollouts that current Codex no longer writes to.
+
+One caveat: `state_*.sqlite` is matched by glob at install time, so if a Codex
+upgrade introduces a new schema version (`state_6.sqlite`), re-run
+`install.sh` to link it.
 
 **One consequence worth knowing:** `config.toml` also holds the `[projects]`
 trust levels Codex writes as you work, so a directory you trust in one profile

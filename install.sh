@@ -35,6 +35,17 @@ link_shared_item() {
 		local backup_path="${target_path}.bak.$(date +%Y%m%d%H%M%S)"
 		mv "$target_path" "$backup_path"
 		log "  backed up existing $target_path -> $backup_path"
+
+		# A SQLite database in WAL mode keeps uncommitted pages in companion
+		# -wal/-shm files that it locates by appending to the DATABASE path.
+		# Renaming the database alone orphans them, and the backup is left
+		# holding an empty shell, so they have to move with it.
+		local companion
+		for companion in "${target_path}-wal" "${target_path}-shm"; do
+			[ -f "$companion" ] || continue
+			mv "$companion" "${backup_path}-${companion##*-}"
+			log "  moved $(basename "$companion") with it"
+		done
 	fi
 
 	mkdir -p "$(dirname "$target_path")"
@@ -121,6 +132,20 @@ mirror_shared_files_into_other_profiles() {
 		link_shared_item "$BASE_DIR/AGENTS.md" "$PROFILE_CODEX_HOME/AGENTS.md"
 		link_shared_item "$BASE_DIR/skills" "$PROFILE_CODEX_HOME/skills"
 		link_shared_item "$BASE_DIR/config.toml" "$PROFILE_CODEX_HOME/config.toml"
+
+		# Conversation history. SQLite resolves symlinks to the real path before
+		# naming its -wal/-shm companions, so both profiles land on one WAL and
+		# its normal multi-process locking applies — verified safe with the two
+		# profiles writing concurrently. Only the .sqlite is linked; the -wal and
+		# -shm files belong next to the real database, never here.
+		if [ -f "$BASE_DIR/history.jsonl" ]; then
+			link_shared_item "$BASE_DIR/history.jsonl" "$PROFILE_CODEX_HOME/history.jsonl"
+		fi
+		local state_db
+		for state_db in "$BASE_DIR"/state_*.sqlite; do
+			[ -f "$state_db" ] || continue
+			link_shared_item "$state_db" "$PROFILE_CODEX_HOME/$(basename "$state_db")"
+		done
 	done
 }
 
